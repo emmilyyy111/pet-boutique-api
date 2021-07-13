@@ -12,12 +12,15 @@ function connectDB() {
 
 exports.getCustomers = (request, response) => {
   const db = connectDB()
-  db.collection('customers')
-    .get()
+  db.collection('customers').get()
     .then(customerCollection => {
-      const allCustomers = customerCollection.docs.map(doc => doc.data())
-      response.send(allCustomers)
+      const allCustomers = customerCollection.docs.map(doc => {
+        let cust = doc.data()
+        cust.id = doc.id
+        return cust
     })
+    response.send(allCustomers)
+  })
     .catch(err => {
       console.error(err)
       response.status(500).send(err)
@@ -72,4 +75,27 @@ exports.createCustomer = (req, res) => {
     .add(bodyParser.json(req.body))
     .then(docRef => res.send(docRef.id))
     .catch(err => res.status(500).send('Customer could not be created'))
+}
+// function to delete customer
+exports.deleteCustomer = (req, res) => {
+  const db = connectDB()
+  const { docId } = req.params
+  db.collection('customers').doc(docId).delete()
+    .then(() => res.status(203).send('Document successfully deleted'))
+    .catch(err => res.status(500).send(err))
+  
+}
+
+exports.updateCustomer = (req, res) => {
+  const db = connectDB()
+  const { docId } = req.params
+  db.collection('customers').doc(docId).update(
+    {
+      ...req.body, 
+    timestamp: admin.firestore.FieldValue.serverTimestamp(), 
+    gender: 'female',
+    weight: 100
+  })
+  .then(() => res.status(202).send('Document successfully updated'))
+  .catch(err => res.status(500).send(err))
 }
